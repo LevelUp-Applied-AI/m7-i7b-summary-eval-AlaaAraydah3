@@ -13,6 +13,44 @@ make summarize    # runs full pipeline; first run downloads ~250 MB
 
 The first call to `pipeline("summarization", ...)` downloads the model. Plan ~3 minutes for the first run; subsequent runs use cached weights. The full evaluation on 120 articles completes in ~6–8 minutes on CPU after the model is cached.
 
+## Model
+
+This integration uses **`sshleifer/distilbart-cnn-6-6`**, a distilled version of
+BART fine-tuned on the CNN/DailyMail corpus for abstractive summarization.
+DistilBART-CNN-6-6 uses 6 encoder layers and 6 decoder layers (down from BART-large's
+12/12), reducing the model size to ~460 MB while retaining most of the summarization
+quality of the full model. It generates summaries autoregressively using beam search
+(num_beams=4, do_sample=False) with a max output length of 120 tokens and a min of
+30 tokens. The model is loaded from Hugging Face Hub at runtime — no model file is
+committed to this repo.
+
+## Corpus
+
+The evaluation corpus consists of **120 tech and entertainment news articles** drawn
+from the CNN slice of the `glnmario/news-qa-summarization` dataset. Each article is
+paired with a CNN editor-authored reference summary (`data/tech_news_summaries_reference.csv`).
+The full 1,033-article corpus ships in `data/tech_news_articles.csv` and is used for
+the domain-shift analysis in Integration 7A; this integration evaluates on the 120-article
+subset that has reference summaries available. Articles are passed directly to the
+summarization pipeline using the `text` column; no preprocessing is applied beyond the
+model's built-in tokenization and 1,024-token input truncation.
+
+## Re-run command
+
+```bash
+pip install -r requirements.txt
+make summarize    # produces summary_predictions.csv + summary_metrics.json
+```
+
+Without `make` (Windows):
+
+```bash
+python summarize.py
+```
+
+Aggregate results from the last run: ROUGE-1 = 0.37, ROUGE-2 = 0.16, ROUGE-L = 0.27
+across 120 articles using `sshleifer/distilbart-cnn-6-6`.
+
 ## What you will produce
 
 Committed:
